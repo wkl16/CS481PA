@@ -56,8 +56,8 @@ int main(void) {
     exit(EXIT_FAILURE);
   } else if (child_pid == 0) {
     // child execute "yes"
-    char *args[] = {"/bin/yes", NULL};
-    execve("/bin/yes", args, NULL);
+    char *args[] = {"usr/bin/yes", NULL};
+    execve("usr/bin/yes", args, NULL);
     perror("execve failed");  // if execve fails
     exit(EXIT_FAILURE);
   }

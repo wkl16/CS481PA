@@ -6,7 +6,7 @@
 struct {
   int balance[2];
   pthread_mutex_t lock;  // Add mutex lock to the Bank structure
-} Bank = {{100, 100}, PTHREAD_MUTEX_INITIALIZER};
+} Bank = {{100, 100}};
 
 void* MakeTransactions() {  // routine for thread execution
   int i, j, tmp1, tmp2, rint;
@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
   int i;
   void* voidptr = NULL;
   pthread_t tid[2];
+  pthread_mutex_init(&Bank.lock, NULL);
   srand(getpid());
   printf("Init balances A:%d + B:%d ==> %d!\n", Bank.balance[0],
          Bank.balance[1], Bank.balance[0] + Bank.balance[1]);

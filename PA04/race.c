@@ -2,14 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 struct {
   int balance[2];
-} Bank = {{100, 100}};      // global variable defined
+  pthread_mutex_t lock;  // Add mutex lock to the Bank structure
+} Bank = {{100, 100}, PTHREAD_MUTEX_INITIALIZER};
+
 void* MakeTransactions() {  // routine for thread execution
   int i, j, tmp1, tmp2, rint;
   double dummy;
   for (i = 0; i < 100; i++) {
     rint = (rand() % 30) - 15;
+    pthread_mutex_lock(&Bank.lock);  // Lock before accessing shared resources
     if (((tmp1 = Bank.balance[0]) + rint) >= 0 &&
         ((tmp2 = Bank.balance[1]) - rint) >= 0) {
       Bank.balance[0] = tmp1 + rint;
@@ -18,9 +22,11 @@ void* MakeTransactions() {  // routine for thread execution
       }  // spend time on purpose
       Bank.balance[1] = tmp2 - rint;
     }
+    pthread_mutex_unlock(&Bank.lock);  // Unlock after modification
   }
   return NULL;
 }
+
 int main(int argc, char** argv) {
   int i;
   void* voidptr = NULL;

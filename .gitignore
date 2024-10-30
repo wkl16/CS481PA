@@ -1,6 +1,10 @@
 PA01/PA01
 PA02/PA02fib
 PA02/PA02sig
+PA04/race
+PA04/proc_unsafe
+PA04/proc_safe
+PA04/thread_safe
 **/*.csv
 **/.DS_Store
 .DS_Store

@@ -30,6 +30,7 @@ void* make_transactions() {
 
     return NULL;
 }
+
 int main(int argc, char** argv) {
     int i;
     void* voidptr = NULL;

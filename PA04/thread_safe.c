@@ -5,11 +5,11 @@
 
 typedef struct {
     int balance[2];
+    pthread_mutex_t mutex;
 } Bank;
 
 // Define global variables
 Bank bank = {{100, 100}};
-pthread_mutex_t mutex;
 
 
 /* Routine for thread execution */
@@ -20,7 +20,7 @@ void* make_transactions() {
     for (i = 0; i < 100; i++) {
         rint = (rand() % 30) - 15;
 
-        pthread_mutex_lock(&mutex); // Aquire lock
+        pthread_mutex_lock(&bank.mutex); // Aquire lock
         if (((tmp1 = bank.balance[0]) + rint) >= 0 &&
                 ((tmp2 = bank.balance[1]) - rint) >= 0) {
             bank.balance[0] = tmp1 + rint;
@@ -29,7 +29,7 @@ void* make_transactions() {
             }  // spend time on purpose
             bank.balance[1] = tmp2 - rint;
         }
-        pthread_mutex_unlock(&mutex); // Release lock
+        pthread_mutex_unlock(&bank.mutex); // Release lock
     }
 
     return NULL;
@@ -37,7 +37,7 @@ void* make_transactions() {
 
 
 int main(int argc, char** argv) {
-    pthread_mutex_init(&mutex, NULL);
+    pthread_mutex_init(&bank.mutex, NULL);
     int i;
     void* voidptr = NULL;
     pthread_t tid[2];
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     for (i = 0; i < 2; i++) {
         if (pthread_create(&tid[i], NULL, make_transactions, NULL)) {
             perror("Error in thread creating\n");
-            return (1);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     for (i = 0; i < 2; i++) {
         if (pthread_join(tid[i], (void*)&voidptr)) {
             perror("Error in thread joining\n");
-            return (1);
+            exit(EXIT_FAILURE);
         }
     }
 

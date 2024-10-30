@@ -9,11 +9,11 @@
 
 typedef struct {
     int balance[2];
+    sem_t sem;
 } Bank;
 
 // Define global variables
 Bank *bank;
-sem_t *sem;
 
 
 /* Routine for thread execution */
@@ -24,7 +24,7 @@ void* make_transactions() {
     for (i = 0; i < 100; i++) {
         rint = (rand() % 30) - 15;
 
-        sem_wait(sem);
+        sem_wait(&bank->sem);
         if (((tmp1 = bank->balance[0]) + rint) >= 0 &&
                 ((tmp2 = bank->balance[1]) - rint) >= 0) {
             bank->balance[0] = tmp1 + rint;
@@ -33,7 +33,7 @@ void* make_transactions() {
             }  // spend time on purpose
             bank->balance[1] = tmp2 - rint;
         }
-        sem_post(sem);
+        sem_post(&bank->sem);
     }
 
     return NULL;
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     srand(getpid());
 
     // Create shared memory segment
-    key_t key = ftok("shared_bank", 65);
+    key_t key = ftok("proc_safe.c", 65);
     if ((shmid = shmget(key, sizeof(Bank), IPC_CREAT | 0666)) < 0) {
         perror("Failed to get shared memory segment");
         exit(EXIT_FAILURE);
@@ -62,28 +62,7 @@ int main(int argc, char** argv) {
     bank = (Bank *) shm;
     bank->balance[0] = 100;
     bank->balance[1] = 100;
-
-    // Create shared memory segment
-    key_t key_sem = ftok("proc_safe.c", 65);
-    if (key_sem < 0) {
-        perror("Failed to generate semaphore key");
-        exit(EXIT_FAILURE);
-    }
-    printf("%d", key_sem);
-    if ((shmid = shmget(key_sem, sizeof(sem_t), IPC_CREAT | 0666)) < 0) {
-        perror("Failed to get shared memory segment for semaphore");
-        exit(EXIT_FAILURE);
-    }
-
-    // Attach the shared memory segment
-    if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-        perror("Failed to attach shared memory segment");
-        exit(EXIT_FAILURE);
-    }
-
-    // Initialize the semaphore
-    sem = (sem_t *) shm;
-    sem_init(sem, 1, 1);
+    sem_init(&bank->sem, 1, 1);
 
     // Print the initial state
     printf("Init balances A:%d + B:%d ==> %d!\n", 
@@ -96,6 +75,7 @@ int main(int argc, char** argv) {
     } else if (pid == 0) {
         // Child process
         make_transactions();
+        shmdt(shm);
         exit(EXIT_SUCCESS);
     } else {
         // Fork failed
@@ -109,5 +89,11 @@ int main(int argc, char** argv) {
     // Print the results
     printf("Let's check the balances A:%d + B:%d ==> %d ?= 200\n",
             bank->balance[0], bank->balance[1], bank->balance[0] + bank->balance[1]);
+
+    // Cleanup
+    sem_destroy(&bank->sem);
+    shmdt(shm);
+    shmctl(shmid, IPC_RMID, NULL);  // Remove shared memory segment
+
     return 0;
 }

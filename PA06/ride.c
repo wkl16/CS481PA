@@ -15,7 +15,7 @@ int total_rejected = 0;
 int total_riders = 0;
 int current_time_step = 0;
 int num_cars, max_per_car;
-sem_t semaphore_minute;
+sem_t *sems;
 pthread_mutex_t lock;
 
 
@@ -49,7 +49,16 @@ void* handle_incoming(void* arg) {
                 9 + (current_time_step / 60), current_time_step % 60, 0);
 
         pthread_mutex_unlock(&lock);
+
+        // Signal all thread semaphores
+        for (int i = 0; i < num_cars; i++) {
+            sem_post(&sems[i]);
+        }
         usleep(1e5);  // 0.1 sec
+    }
+    // Signal all thread semaphores
+    for (int i = 0; i < num_cars; i++) {
+        sem_post(&sems[i]);
     }
 
     return NULL;
@@ -58,9 +67,8 @@ void* handle_incoming(void* arg) {
 void* handle_ride(void* arg) {
     int id = *((int *) arg);
     while (current_time_step < SIMULATION_TIME) {
-        // TODO:
-        // I dont think the threads are syncornizing prperly
-        sem_wait(&semaphore_minute);
+        // Wait at this thread's semaphore
+        sem_wait(&sems[id]);
         pthread_mutex_lock(&lock);
 
         int riders = (waiting_line >= max_per_car) ? max_per_car : waiting_line;
@@ -69,13 +77,6 @@ void* handle_ride(void* arg) {
 
         printf("[%d] handling %d riders\n", id, riders);
         pthread_mutex_unlock(&lock);
-
-        // TODO:
-        // This probably isnt correct. This thread will sleep for most of the program
-        // If the semaphore handles the syncronization, should this thread sleep at all
-        // or simply wait a the semaphore
-        usleep(6000000);  // 7 + 53 secs
-                          // sleep(60);
     }
 
     return NULL;
@@ -143,8 +144,10 @@ int main(int argc, char* argv[]) {
     max_per_car = m;
     pthread_t incoming_thread;
     pthread_t ride_threads[num_cars];
-
-    sem_init(&semaphore_minute, 0, 0);
+    sems = malloc(num_cars * sizeof(sem_t));
+    for (int i=0; i < num_cars; i++) {
+        sem_init(&sems[i], 0, 0);
+    }
     pthread_mutex_init(&lock, NULL);
 
     pthread_create(&incoming_thread, NULL, handle_incoming, NULL);
@@ -167,7 +170,9 @@ int main(int argc, char* argv[]) {
     // the length of the line at its worst case, and the time of day at which that
     // occurs.
 
-    sem_destroy(&semaphore_minute);
+    for (int i=0; i < num_cars; i++) {
+        sem_destroy(&sems[i]);
+    }
 
     return EXIT_SUCCESS;
 }

@@ -18,36 +18,41 @@ int num_cars, max_per_car;
 sem_t semaphore_minute;
 pthread_mutex_t lock;
 
+
 void* handle_incoming(void* arg) {
-  for (current_time_step = 0; current_time_step < SIMULATION_TIME;
-       current_time_step++) {
-    int meanArrival = (current_time_step < 120)   ? 25
-                      : (current_time_step < 240) ? 45
-                      : (current_time_step < 360) ? 35
-                                                  : 25;
+    for (current_time_step = 0; current_time_step < SIMULATION_TIME;
+            current_time_step++) {
+        int meanArrival = (current_time_step < 120)   ? 25
+            : (current_time_step < 240) ? 45
+            : (current_time_step < 360) ? 35
+            : 25;
 
-    int arrivals = poissonRandom(meanArrival);
-    pthread_mutex_lock(&lock);
+        int arrivals = poissonRandom(meanArrival);
+        pthread_mutex_lock(&lock);
 
-    total_arrived += arrivals;
-    int rejected = 0;
-    if (waiting_line + arrivals > MAXWAITPEOPLE) {
-      rejected = (waiting_line + arrivals) - MAXWAITPEOPLE;
-      arrivals -= rejected;
-      total_rejected += rejected;
+        total_arrived += arrivals;
+        int rejected = 0;
+        if (waiting_line + arrivals > MAXWAITPEOPLE) {
+            rejected = (waiting_line + arrivals) - MAXWAITPEOPLE;
+            arrivals -= rejected;
+            total_rejected += rejected;
+        }
+
+        waiting_line += arrivals;
+
+        // TODO:
+        // I dont think this prints the correct arrivals
+        // The arrivals should include all the people who arrive
+        // including those who are rejected
+        printf("%03d arrive %d reject %d wait-line %d at %02d:%02d:%02d\n",
+                current_time_step, arrivals, rejected, waiting_line,
+                9 + (current_time_step / 60), current_time_step % 60, 0);
+
+        pthread_mutex_unlock(&lock);
+        usleep(1e5);  // 0.1 sec
     }
 
-    waiting_line += arrivals;
-
-    printf("%03d arrive %d reject %d wait-line %d at %02d:%02d:%02d\n",
-           current_time_step, arrivals, rejected, waiting_line,
-           9 + (current_time_step / 60), current_time_step % 60, 0);
-
-    pthread_mutex_unlock(&lock);
-    sem_post(&semaphore_minute);
-    usleep(100000);  // 0.1 sec
-                     // sleep(1); 1 sec
-  }
+    return NULL;
 }
 
 void* handle_ride(void* arg) {
@@ -73,7 +78,8 @@ void* handle_ride(void* arg) {
                           // sleep(60);
     }
 
-    pthread_mutex_unlock(&lock);
+    return NULL;
+}
 
 void print_usage(char *bin) {
     fprintf(stderr, "Usage: %s -N CARNUM -M MAXPERCAR\n", bin);

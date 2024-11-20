@@ -90,11 +90,12 @@ void* handle_incoming(void* arg) {
     return NULL;
 }
 
+
 void* handle_ride(void* arg) {
     int id = *((int *) arg);
+    sem_wait(&sems[id]);
     while (current_time_step < SIMULATION_TIME) {
         // Wait at this thread's semaphore
-        sem_wait(&sems[id]);
         pthread_mutex_lock(&lock);
 
         int riders = (waiting_line >= max_per_car) ? max_per_car : waiting_line;
@@ -114,6 +115,7 @@ void* handle_ride(void* arg) {
         }
 
         pthread_mutex_unlock(&lock);
+        sem_wait(&sems[id]);
     }
 
     return NULL;

@@ -48,25 +48,30 @@ void* handle_incoming(void* arg) {
 
         total_arrived += arrivals;
         int rejected = 0;
+        int accepted = max_per_car;
         if (waiting_line + arrivals > MAXWAITPEOPLE) {
             rejected = (waiting_line + arrivals) - MAXWAITPEOPLE;
-            arrivals -= rejected;
+            accepted -= rejected;
             total_rejected += rejected;
+        }
+
+        // Add new arrivals to queue
+        for (int i=0; i < accepted; i++) {
+            enqueue(queue, current_time_step);
         }
 
         waiting_line += arrivals;
 
-        // TODO:
-        // I dont think this prints the correct arrivals
-        // The arrivals should include all the people who arrive
-        // including those who are rejected
-        printf("%03d arrive %d reject %d wait-line %d at %02d:%02d:%02d\n",
         if (waiting_line > max_line_length) {
             max_line_length = waiting_line;
             max_line_time = current_time_step;
         }
+
+        char time[20];
+        time_format(time, current_time_step);
+        printf("%3d arrive %2d reject %2d wait-line %3d at %s\n",
                 current_time_step, arrivals, rejected, waiting_line,
-                9 + (current_time_step / 60), current_time_step % 60, 0);
+                time);
 
         pthread_mutex_unlock(&lock);
 

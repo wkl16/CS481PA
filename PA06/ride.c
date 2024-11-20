@@ -192,6 +192,13 @@ int main(int argc, char* argv[]) {
     pthread_mutex_init(&lock, NULL);
 
     queue = new_queue(MAXWAITPEOPLE);
+
+#ifndef DEBUG
+    // TODO:
+    // Does the prof want the distribution actually random
+    srand(time(NULL));
+#endif
+
     pthread_create(&incoming_thread, NULL, handle_incoming, NULL);
     int ids[num_cars];
     for (int i = 0; i < num_cars; i++) {

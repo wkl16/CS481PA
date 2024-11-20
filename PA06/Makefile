@@ -9,10 +9,13 @@ RM=rm -f
 all: $(BINS)
 
 $(GITIGNORE): FORCE
-	@$(shell echo $(patsubst ./%,$(DIR)/%,$(BINS)) | sed -e 's/ /\n/g' >> $@)
+	$(shell echo $(patsubst ./%,$(DIR)/%,$(BINS)) | sed -e 's/ /\n/g' >> $@)
 
 %: %.c
 	$(CC) $(CFLAGS) $< -lm -o $@
+
+debug: CFLAGS := $(CFLAGS) -D DEBUG
+debug: $(BINS)
 
 clean:
 	$(RM) $(BINS)

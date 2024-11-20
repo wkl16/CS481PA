@@ -5,6 +5,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "random437.h"
+#include "queue.h"
 #define MAXWAITPEOPLE 800
 #define SIMULATION_TIME 600
 
@@ -14,9 +15,11 @@ int total_arrived = 0;
 int total_rejected = 0;
 int total_riders = 0;
 int current_time_step = 0;
+int total_wait_time = 0;
 int num_cars, max_per_car;
 sem_t *sems;
 pthread_mutex_t lock;
+Queue *queue;
 
 
 void* handle_incoming(void* arg) {
@@ -75,7 +78,18 @@ void* handle_ride(void* arg) {
         total_riders += riders;
         waiting_line -= riders;
 
+#ifdef DEBUG
         printf("[%d] handling %d riders\n", id, riders);
+#endif
+        for (int i=0; i < riders; i++) {
+            int step = dequeue(queue);
+#ifdef DEBUG
+            int wait_time = current_time_step - step;
+            printf("  waited for %d minutes\n", wait_time);
+#endif
+            total_wait_time += current_time_step - step;
+        }
+
         pthread_mutex_unlock(&lock);
     }
 
@@ -150,6 +164,7 @@ int main(int argc, char* argv[]) {
     }
     pthread_mutex_init(&lock, NULL);
 
+    queue = new_queue(MAXWAITPEOPLE);
     pthread_create(&incoming_thread, NULL, handle_incoming, NULL);
     int ids[num_cars];
     for (int i = 0; i < num_cars; i++) {
@@ -162,6 +177,7 @@ int main(int argc, char* argv[]) {
         pthread_join(ride_threads[i], NULL);
     }
 
+    float average_wait_time = ((float) total_wait_time) / total_riders;
     printf("Total arrived: %d\n", total_arrived);
     printf("Total riders: %d\n", total_riders);
     printf("Total rejected: %d\n", total_rejected);
@@ -169,10 +185,13 @@ int main(int argc, char* argv[]) {
     // the average waiting time per person (in minutes)
     // the length of the line at its worst case, and the time of day at which that
     // occurs.
+    printf("Average wait time: %.2f\n", average_wait_time);
 
     for (int i=0; i < num_cars; i++) {
         sem_destroy(&sems[i]);
     }
+
+    free_queue(queue);
 
     return EXIT_SUCCESS;
 }

@@ -49,8 +49,8 @@ void* handle_incoming(void* arg) {
 
         total_arrived += arrivals;
         int rejected = 0;
-        int accepted = max_per_car;
-        if (waiting_line + arrivals > MAXWAITPEOPLE) {
+        int accepted = arrivals;
+        if (waiting_line + accepted > MAXWAITPEOPLE) {
             rejected = (waiting_line + arrivals) - MAXWAITPEOPLE;
             accepted -= rejected;
             total_rejected += rejected;
@@ -61,7 +61,7 @@ void* handle_incoming(void* arg) {
             enqueue(queue, current_time_step);
         }
 
-        waiting_line += arrivals;
+        waiting_line += accepted;
 
         if (waiting_line > max_line_length) {
             max_line_length = waiting_line;

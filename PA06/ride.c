@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
 #ifndef DEBUG
     // TODO:
     // Does the prof want the distribution actually random
-    srand(time(NULL));
+    // srand(time(NULL));
 #endif
 
     pthread_create(&incoming_thread, NULL, handle_incoming, NULL);

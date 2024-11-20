@@ -16,10 +16,23 @@ int total_rejected = 0;
 int total_riders = 0;
 int current_time_step = 0;
 int total_wait_time = 0;
+int max_line_length = 0;
+int max_line_time = 0;
 int num_cars, max_per_car;
 sem_t *sems;
 pthread_mutex_t lock;
 Queue *queue;
+
+
+int time_format(char *buffer, int time_step) {
+    return sprintf(
+        buffer,
+        "%02d:%02d:%02d",
+        9 + time_step / 60,
+        time_step % 60,
+        0
+    );
+}
 
 
 void* handle_incoming(void* arg) {
@@ -48,6 +61,10 @@ void* handle_incoming(void* arg) {
         // The arrivals should include all the people who arrive
         // including those who are rejected
         printf("%03d arrive %d reject %d wait-line %d at %02d:%02d:%02d\n",
+        if (waiting_line > max_line_length) {
+            max_line_length = waiting_line;
+            max_line_time = current_time_step;
+        }
                 current_time_step, arrivals, rejected, waiting_line,
                 9 + (current_time_step / 60), current_time_step % 60, 0);
 
@@ -178,14 +195,15 @@ int main(int argc, char* argv[]) {
     }
 
     float average_wait_time = ((float) total_wait_time) / total_riders;
+    char time[20];
+    time_format(time, max_line_time);
+
+    printf("\n");
     printf("Total arrived: %d\n", total_arrived);
     printf("Total riders: %d\n", total_riders);
     printf("Total rejected: %d\n", total_rejected);
-    // TODOs:
-    // the average waiting time per person (in minutes)
-    // the length of the line at its worst case, and the time of day at which that
-    // occurs.
     printf("Average wait time: %.2f\n", average_wait_time);
+    printf("Max wait line: %d people at %s\n", max_line_length, time);
 
     for (int i=0; i < num_cars; i++) {
         sem_destroy(&sems[i]);

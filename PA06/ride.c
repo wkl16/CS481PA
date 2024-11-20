@@ -8,7 +8,7 @@
 #include "queue.h"
 #define MAXWAITPEOPLE 800
 #define SIMULATION_TIME 600
-#define VIRTUAL_MINUTE 1e3 // in micro seconds
+#define VIRTUAL_MINUTE 1e4 // in micro seconds
 
 // Global variables
 int waiting_line = 0;

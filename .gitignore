@@ -7,5 +7,6 @@ PA04/proc_safe
 PA04/thread_safe
 PA06/ride
 **/*.csv
+**/*.txt
 **/.DS_Store
 .DS_Store

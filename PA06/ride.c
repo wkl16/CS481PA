@@ -8,6 +8,7 @@
 #include "queue.h"
 #define MAXWAITPEOPLE 800
 #define SIMULATION_TIME 600
+#define VIRTUAL_MINUTE 1e3 // in micro seconds
 
 // Global variables
 int waiting_line = 0;
@@ -38,7 +39,7 @@ int time_format(char *buffer, int time_step) {
 void* handle_incoming(void* arg) {
     for (current_time_step = 0; current_time_step < SIMULATION_TIME;
             current_time_step++) {
-        int meanArrival = (current_time_step < 120)   ? 25
+        int meanArrival = (current_time_step < 120) ? 25
             : (current_time_step < 240) ? 45
             : (current_time_step < 360) ? 35
             : 25;
@@ -79,7 +80,7 @@ void* handle_incoming(void* arg) {
         for (int i = 0; i < num_cars; i++) {
             sem_post(&sems[i]);
         }
-        usleep(1e5);  // 0.1 sec
+        usleep(VIRTUAL_MINUTE);  // 0.1 sec
     }
     // Signal all thread semaphores
     for (int i = 0; i < num_cars; i++) {
@@ -118,9 +119,11 @@ void* handle_ride(void* arg) {
     return NULL;
 }
 
+
 void print_usage(char *bin) {
     fprintf(stderr, "Usage: %s -N CARNUM -M MAXPERCAR\n", bin);
 }
+
 
 int main(int argc, char* argv[]) {
     int c, n, m;

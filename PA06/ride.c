@@ -8,7 +8,7 @@
 #include "queue.h"
 #define MAXWAITPEOPLE 800
 #define SIMULATION_TIME 600
-#define VIRTUAL_MINUTE 1e3 // in micro seconds
+#define VIRTUAL_MINUTE 1e4 // in micro seconds
 
 // Global variables
 int waiting_line = 0;
@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
 #ifndef DEBUG
     // TODO:
     // Does the prof want the distribution actually random
-    srand(time(NULL));
+    // srand(time(NULL));
 #endif
 
     pthread_create(&incoming_thread, NULL, handle_incoming, NULL);
